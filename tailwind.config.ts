@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,17 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Custom colors for our organic food app
+				organic: {
+					light: '#E3EFE3',
+					DEFAULT: '#4D7C4D',
+					dark: '#355635',
+				},
+				earthy: {
+					light: '#F5F0E5',
+					DEFAULT: '#A67C52',
+					dark: '#614731',
 				}
 			},
 			borderRadius: {
