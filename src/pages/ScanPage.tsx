@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import BarcodeScanner from '@/components/scanner/BarcodeScanner';
 import ImageScanner from '@/components/scanner/ImageScanner';
-import { Barcode, Image } from 'lucide-react';
+import { Barcode, Image, Globe } from 'lucide-react';
 
 const ScanPage = () => {
   const [activeTab, setActiveTab] = useState('barcode');
@@ -17,6 +17,7 @@ const ScanPage = () => {
           <p className="text-gray-600 max-w-2xl mx-auto">
             Use our advanced scanning technology to identify and trace organic food products. 
             Choose between barcode scanning for packaged foods or image recognition for fresh produce.
+            We verify organic status by cross-referencing data from multiple trusted sources.
           </p>
         </div>
 
@@ -56,6 +57,9 @@ const ScanPage = () => {
                 <p className="text-sm text-gray-600">
                   3. View detailed information about the product, including certification, origin, and nutritional data.
                 </p>
+                <p className="text-sm text-gray-600">
+                  4. We'll verify the organic status by checking multiple trusted sources and databases.
+                </p>
                 <div className="text-xs text-gray-500 p-3 bg-gray-100 rounded-md mt-4">
                   <p>Note: In this demonstration, we simulate barcode scanning with random values. 
                   A production version would connect to real food databases and use your device's camera.</p>
@@ -71,6 +75,9 @@ const ScanPage = () => {
                 </p>
                 <p className="text-sm text-gray-600">
                   3. Our AI will identify the item and provide information about its organic properties and nutrition.
+                </p>
+                <p className="text-sm text-gray-600">
+                  4. We cross-reference multiple organic certification databases to verify authenticity.
                 </p>
                 <div className="text-xs text-gray-500 p-3 bg-gray-100 rounded-md mt-4">
                   <p>Note: This demonstration simulates image recognition with predetermined responses. 

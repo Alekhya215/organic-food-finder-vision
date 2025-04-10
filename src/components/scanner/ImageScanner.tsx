@@ -2,8 +2,33 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Image, Camera } from 'lucide-react';
+import { Image, Camera, Check, X, Globe } from 'lucide-react';
 import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
+
+// Mock data for organic verification from different websites by food type
+const mockOrganicVerificationData = {
+  'Apple (Organic)': [
+    { source: 'OrganicProduce.org', isOrganic: true, certificationId: 'USDA-NOP-85241' },
+    { source: 'FarmTracker.com', isOrganic: true, farmName: 'Honeycrisp Organic Farms' },
+    { source: 'FruitDatabase.org', isOrganic: true, notes: 'Certified organic, no pesticides' }
+  ],
+  'Spinach (Organic)': [
+    { source: 'OrganicVegetables.org', isOrganic: true, certificationId: 'EU-BIO-76123' },
+    { source: 'FarmTracker.com', isOrganic: true, farmName: 'Green Valley Organics' },
+    { source: 'ProduceCheck.com', isOrganic: true, notes: 'Certified organic cultivation' }
+  ],
+  'Tomato (Organic)': [
+    { source: 'ProduceDatabase.org', isOrganic: false, notes: 'Detected conventional growing methods' },
+    { source: 'OrganicVerify.com', isOrganic: false, notes: 'No organic certification found' },
+    { source: 'FarmInspect.org', isOrganic: false, notes: 'May contain traces of non-organic fertilizers' }
+  ],
+  'Carrots (Organic)': [
+    { source: 'OrganicRootVegetables.org', isOrganic: true, certificationId: 'CAN-ORG-32145' },
+    { source: 'RootVegCheck.com', isOrganic: true, notes: 'Fully organic farm verified' },
+    { source: 'OrganicTracker.net', isOrganic: true, farmName: 'Sunrise Organic Farms' }
+  ]
+};
 
 const ImageScanner = () => {
   const [scanning, setScanning] = useState(false);
@@ -11,6 +36,8 @@ const ImageScanner = () => {
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [verificationData, setVerificationData] = useState<any[] | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -88,15 +115,49 @@ const ImageScanner = () => {
           setResult(randomResult);
           setScanning(false);
           toast.success('Food item recognized successfully!');
+          
+          // Trigger verification after analysis
+          verifyOrganicStatus(randomResult);
         }, 2000);
       }
     }
   };
 
+  const verifyOrganicStatus = (foodItem: string) => {
+    setIsVerifying(true);
+    setVerificationData(null);
+    
+    // Simulate API calls to different websites
+    setTimeout(() => {
+      const data = mockOrganicVerificationData[foodItem as keyof typeof mockOrganicVerificationData] || [];
+      setVerificationData(data);
+      setIsVerifying(false);
+      
+      // Calculate if majority say it's organic
+      const organicCount = data.filter(item => item.isOrganic).length;
+      if (organicCount > data.length / 2) {
+        toast.success('Item verified as organic by majority of sources!');
+      } else {
+        toast.error('Item may not be organic. Check verification details.');
+      }
+    }, 1500);
+  };
+
   const resetCapture = () => {
     setCapturedImage(null);
     setResult(null);
+    setVerificationData(null);
   };
+
+  // Calculate overall organic status
+  const getOverallOrganicStatus = () => {
+    if (!verificationData) return null;
+    
+    const organicCount = verificationData.filter(item => item.isOrganic).length;
+    return organicCount > verificationData.length / 2;
+  };
+
+  const overallStatus = getOverallOrganicStatus();
 
   return (
     <Card className="w-full max-w-md mx-auto">
@@ -212,11 +273,59 @@ const ImageScanner = () => {
             <div className="w-full p-4 bg-earthy-light rounded-lg">
               <h4 className="font-medium mb-2">Food Information</h4>
               <p className="text-sm text-gray-700">
-                Finding details about {result}...
+                Identified Item: {result}
               </p>
-              <p className="text-xs text-gray-500 mt-2">
-                Note: In the actual application, this would display real food information fetched from organic food databases and nutrition sources.
-              </p>
+              
+              {isVerifying ? (
+                <div className="mt-3 flex items-center space-x-2">
+                  <div className="animate-spin h-4 w-4 border-2 border-earthy border-t-transparent rounded-full"></div>
+                  <p className="text-sm">Verifying organic status from multiple sources...</p>
+                </div>
+              ) : verificationData && (
+                <div className="mt-3">
+                  <div className="flex items-center mb-2">
+                    <Globe className="h-4 w-4 mr-1 text-gray-600" />
+                    <p className="text-sm font-medium">Cross-Verification Results:</p>
+                  </div>
+                  
+                  <div className="bg-white p-2 rounded border border-gray-200">
+                    <div className="flex items-center mb-2 justify-between">
+                      <p className="text-sm font-medium">Overall Status:</p>
+                      {overallStatus === true ? (
+                        <Badge className="bg-green-500">Organic</Badge>
+                      ) : overallStatus === false ? (
+                        <Badge className="bg-red-500">Not Organic</Badge>
+                      ) : (
+                        <Badge className="bg-yellow-500">Unverified</Badge>
+                      )}
+                    </div>
+                    
+                    <ul className="divide-y divide-gray-100 text-xs">
+                      {verificationData.map((item, index) => (
+                        <li key={index} className="py-2">
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium truncate max-w-[180px]">{item.source}</span>
+                            {item.isOrganic ? (
+                              <span className="flex items-center text-green-600">
+                                <Check className="h-3 w-3 mr-1" /> Verified
+                              </span>
+                            ) : (
+                              <span className="flex items-center text-red-600">
+                                <X className="h-3 w-3 mr-1" /> Not Verified
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-gray-500 mt-1">
+                            {item.certificationId && <div>ID: {item.certificationId}</div>}
+                            {item.farmName && <div>Farm: {item.farmName}</div>}
+                            {item.notes && <div>Note: {item.notes}</div>}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

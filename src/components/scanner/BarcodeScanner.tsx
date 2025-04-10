@@ -2,14 +2,41 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Barcode, Camera } from 'lucide-react';
+import { Barcode, Camera, Check, X, AlertCircle, Globe } from 'lucide-react';
 import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
+
+// Mock data for organic verification from different websites
+const mockOrganicVerificationData = {
+  '8901063152227': [
+    { source: 'OrganicCertifier.org', isOrganic: true, certificationId: 'ORG-7823-IN' },
+    { source: 'GlobalOrganicDatabase.com', isOrganic: true, certificationDate: '2023-05-12' },
+    { source: 'USDAOrganicList.gov', isOrganic: false, notes: 'Pending verification' }
+  ],
+  '5000112637922': [
+    { source: 'EUOrganicRegistry.eu', isOrganic: true, certificationId: 'EU-BIO-140' },
+    { source: 'OrganicFoodIndex.org', isOrganic: true, certificationDate: '2024-01-30' },
+    { source: 'OrganicStandards.uk', isOrganic: true, notes: 'Fully compliant' }
+  ],
+  '8901719110018': [
+    { source: 'IndiaOrganicCertification.in', isOrganic: false, notes: 'Contains non-organic ingredients' },
+    { source: 'GlobalOrganicDatabase.com', isOrganic: false, notes: 'Not registered' },
+    { source: 'OrganicAlliance.org', isOrganic: false, notes: 'Conventional farming methods used' }
+  ],
+  '8902080527022': [
+    { source: 'OrganicCertifier.org', isOrganic: true, certificationId: 'ORG-5531-IN' },
+    { source: 'AsiaOrganicNetwork.com', isOrganic: true, certificationDate: '2024-02-10' },
+    { source: 'GlobalOrganicDatabase.com', isOrganic: true, notes: 'Certified organic' }
+  ]
+};
 
 const BarcodeScanner = () => {
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
+  const [verificationData, setVerificationData] = useState<any[] | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
@@ -67,8 +94,41 @@ const BarcodeScanner = () => {
       setResult(randomBarcode);
       setScanning(false);
       toast.success('Barcode scanned successfully!');
+      
+      // Trigger verification after scan
+      verifyOrganicStatus(randomBarcode);
     }, 2000);
   };
+
+  const verifyOrganicStatus = (barcode: string) => {
+    setIsVerifying(true);
+    setVerificationData(null);
+    
+    // Simulate API calls to different websites
+    setTimeout(() => {
+      const data = mockOrganicVerificationData[barcode as keyof typeof mockOrganicVerificationData] || [];
+      setVerificationData(data);
+      setIsVerifying(false);
+      
+      // Calculate if majority say it's organic
+      const organicCount = data.filter(item => item.isOrganic).length;
+      if (organicCount > data.length / 2) {
+        toast.success('Product verified as organic by majority of sources!');
+      } else {
+        toast.error('Product may not be organic. Check verification details.');
+      }
+    }, 1500);
+  };
+
+  // Calculate overall organic status
+  const getOverallOrganicStatus = () => {
+    if (!verificationData) return null;
+    
+    const organicCount = verificationData.filter(item => item.isOrganic).length;
+    return organicCount > verificationData.length / 2;
+  };
+
+  const overallStatus = getOverallOrganicStatus();
 
   return (
     <Card className="w-full max-w-md mx-auto">
@@ -157,11 +217,59 @@ const BarcodeScanner = () => {
             <div className="w-full p-4 bg-organic-light rounded-lg">
               <h4 className="font-medium mb-2">Product Information</h4>
               <p className="text-sm text-gray-700">
-                Scanning for details about organic product with barcode {result}...
+                Barcode: {result}
               </p>
-              <p className="text-xs text-gray-500 mt-2">
-                Note: In the actual application, this would display real product information fetched from organic food databases.
-              </p>
+              
+              {isVerifying ? (
+                <div className="mt-3 flex items-center space-x-2">
+                  <div className="animate-spin h-4 w-4 border-2 border-organic border-t-transparent rounded-full"></div>
+                  <p className="text-sm">Verifying organic status from multiple sources...</p>
+                </div>
+              ) : verificationData && (
+                <div className="mt-3">
+                  <div className="flex items-center mb-2">
+                    <Globe className="h-4 w-4 mr-1 text-gray-600" />
+                    <p className="text-sm font-medium">Cross-Verification Results:</p>
+                  </div>
+                  
+                  <div className="bg-white p-2 rounded border border-gray-200">
+                    <div className="flex items-center mb-2 justify-between">
+                      <p className="text-sm font-medium">Overall Status:</p>
+                      {overallStatus === true ? (
+                        <Badge className="bg-green-500">Organic</Badge>
+                      ) : overallStatus === false ? (
+                        <Badge className="bg-red-500">Not Organic</Badge>
+                      ) : (
+                        <Badge className="bg-yellow-500">Unverified</Badge>
+                      )}
+                    </div>
+                    
+                    <ul className="divide-y divide-gray-100 text-xs">
+                      {verificationData.map((item, index) => (
+                        <li key={index} className="py-2">
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium truncate max-w-[180px]">{item.source}</span>
+                            {item.isOrganic ? (
+                              <span className="flex items-center text-green-600">
+                                <Check className="h-3 w-3 mr-1" /> Verified
+                              </span>
+                            ) : (
+                              <span className="flex items-center text-red-600">
+                                <X className="h-3 w-3 mr-1" /> Not Verified
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-gray-500 mt-1">
+                            {item.certificationId && <div>ID: {item.certificationId}</div>}
+                            {item.certificationDate && <div>Date: {item.certificationDate}</div>}
+                            {item.notes && <div>Note: {item.notes}</div>}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
