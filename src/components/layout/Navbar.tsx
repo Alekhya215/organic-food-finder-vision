@@ -3,8 +3,12 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Search, Barcode, Image } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import ProfileDropdown from '@/components/auth/ProfileDropdown';
 
 const Navbar = () => {
+  const { isAuthenticated } = useAuth();
+
   return (
     <nav className="bg-white shadow-sm">
       <div className="container mx-auto px-4 py-4">
@@ -38,10 +42,24 @@ const Navbar = () => {
               <Search className="w-4 h-4 mr-2" />
               Search
             </Button>
+            
             <Button variant="default" size="sm" className="bg-organic hover:bg-organic-dark text-white">
               <Barcode className="w-4 h-4 mr-2" />
               Scan Now
             </Button>
+            
+            {isAuthenticated ? (
+              <ProfileDropdown />
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/login">Login</Link>
+                </Button>
+                <Button variant="outline" size="sm" className="border-organic text-organic" asChild>
+                  <Link to="/register">Sign up</Link>
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>
