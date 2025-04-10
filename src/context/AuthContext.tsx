@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface User {
   id: string;
-  email: string;
+  phoneNumber: string;
   name: string;
 }
 
@@ -11,8 +11,8 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
+  login: (phoneNumber: string, password: string) => Promise<void>;
+  register: (phoneNumber: string, password: string, name: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -32,7 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   // Frontend-only mock functions
-  const login = async (email: string, password: string) => {
+  const login = async (phoneNumber: string, password: string) => {
     // Simulate API call
     setIsLoading(true);
     try {
@@ -40,7 +40,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Mock user data
-      const userData = { id: '1', email, name: email.split('@')[0] };
+      const userData = { id: '1', phoneNumber, name: `User_${phoneNumber.slice(-4)}` };
       
       // Store user in localStorage
       localStorage.setItem('user', JSON.stringify(userData));
@@ -50,7 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (email: string, password: string, name: string) => {
+  const register = async (phoneNumber: string, password: string, name: string) => {
     // Simulate API call
     setIsLoading(true);
     try {
@@ -58,7 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Mock user data
-      const userData = { id: '1', email, name };
+      const userData = { id: '1', phoneNumber, name };
       
       // Store user in localStorage
       localStorage.setItem('user', JSON.stringify(userData));

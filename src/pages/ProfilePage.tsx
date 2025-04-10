@@ -36,9 +36,9 @@ const ProfilePage = () => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" defaultValue={user?.email} readOnly />
-                <p className="text-sm text-muted-foreground">Your email address cannot be changed</p>
+                <Label htmlFor="phoneNumber">Phone Number</Label>
+                <Input id="phoneNumber" type="tel" defaultValue={user?.phoneNumber} readOnly />
+                <p className="text-sm text-muted-foreground">Your phone number cannot be changed</p>
               </div>
               
               <div className="pt-4">
