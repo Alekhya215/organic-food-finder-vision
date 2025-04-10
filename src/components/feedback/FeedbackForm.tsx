@@ -66,7 +66,13 @@ export const FeedbackForm = () => {
     setIsSubmitting(true);
     try {
       // Now values is guaranteed to have all required fields
-      await saveFeedback(values);
+      await saveFeedback({
+        name: values.name,
+        email: values.email,
+        rating: values.rating,
+        category: values.category,
+        message: values.message
+      });
       toast.success('Thank you for your feedback!', {
         description: 'We appreciate your input and will use it to improve our services.',
       });
