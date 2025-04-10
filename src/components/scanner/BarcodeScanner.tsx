@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Barcode, Camera } from 'lucide-react';
@@ -8,10 +8,59 @@ import { toast } from 'sonner';
 const BarcodeScanner = () => {
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const [cameraActive, setCameraActive] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  // Clean up video stream when component unmounts
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
+
+  const requestCameraPermission = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' }
+      });
+      
+      setHasCameraPermission(true);
+      streamRef.current = stream;
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+      
+      setCameraActive(true);
+      toast.success('Camera activated successfully');
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      setHasCameraPermission(false);
+      toast.error('Could not access camera. Please check permissions.');
+    }
+  };
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    
+    setCameraActive(false);
+  };
 
   const handleScan = () => {
     setScanning(true);
-    // In a real app, we would integrate with a barcode scanning library
+    // In a real app, we would analyze video frames for barcodes
+    // For simulation purposes, we'll just use a timeout
     setTimeout(() => {
       const mockBarcodes = ['8901063152227', '5000112637922', '8901719110018', '8902080527022'];
       const randomBarcode = mockBarcodes[Math.floor(Math.random() * mockBarcodes.length)];
@@ -34,8 +83,16 @@ const BarcodeScanner = () => {
             Point your camera at a barcode on a packaged organic food product
           </p>
           
-          <div className="w-full aspect-video bg-gray-100 rounded-lg flex items-center justify-center">
-            {scanning ? (
+          <div className="w-full aspect-video bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden relative">
+            {cameraActive ? (
+              <video 
+                ref={videoRef} 
+                autoPlay 
+                playsInline 
+                muted 
+                className="w-full h-full object-cover"
+              />
+            ) : scanning ? (
               <div className="text-center">
                 <div className="animate-pulse">
                   <Camera className="w-12 h-12 text-organic mx-auto" />
@@ -50,18 +107,51 @@ const BarcodeScanner = () => {
             ) : (
               <div className="text-center text-gray-400">
                 <Camera className="w-12 h-12 mx-auto opacity-50" />
-                <p className="mt-2 text-sm">Camera preview will appear here</p>
+                <p className="mt-2 text-sm">Camera access required</p>
+              </div>
+            )}
+            
+            {scanning && cameraActive && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
+                <div className="animate-pulse">
+                  <Barcode className="w-16 h-16 text-white" />
+                </div>
               </div>
             )}
           </div>
           
-          <Button 
-            onClick={handleScan} 
-            className="w-full bg-organic hover:bg-organic-dark"
-            disabled={scanning}
-          >
-            {scanning ? 'Scanning...' : 'Scan Barcode'}
-          </Button>
+          {!cameraActive ? (
+            <Button 
+              onClick={requestCameraPermission} 
+              className="w-full bg-organic hover:bg-organic-dark"
+              disabled={scanning}
+            >
+              Enable Camera
+            </Button>
+          ) : (
+            <div className="w-full flex space-x-2">
+              <Button 
+                onClick={handleScan} 
+                className="flex-1 bg-organic hover:bg-organic-dark"
+                disabled={scanning}
+              >
+                {scanning ? 'Scanning...' : 'Scan Barcode'}
+              </Button>
+              <Button 
+                onClick={stopCamera} 
+                variant="outline"
+                className="border-organic text-organic"
+              >
+                Stop Camera
+              </Button>
+            </div>
+          )}
+          
+          {hasCameraPermission === false && (
+            <div className="w-full p-3 bg-red-50 text-red-600 rounded-md text-sm">
+              Camera access denied. Please check your browser settings and grant camera permissions.
+            </div>
+          )}
           
           {result && (
             <div className="w-full p-4 bg-organic-light rounded-lg">
