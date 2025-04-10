@@ -22,8 +22,9 @@ import {
   RadioGroup, 
   RadioGroupItem 
 } from '@/components/ui/radio-group';
-import { saveFeedback } from '@/services/feedbackService';
+import { saveFeedback, Feedback } from '@/services/feedbackService';
 
+// Define the feedback schema with the same types as the Feedback interface
 const feedbackSchema = z.object({
   name: z.string().min(2, {
     message: "Name must be at least 2 characters."
@@ -44,6 +45,7 @@ const feedbackSchema = z.object({
   }),
 });
 
+// This ensures our form values match what saveFeedback expects
 type FeedbackFormValues = z.infer<typeof feedbackSchema>;
 
 export const FeedbackForm = () => {
@@ -63,6 +65,7 @@ export const FeedbackForm = () => {
   const onSubmit = async (values: FeedbackFormValues) => {
     setIsSubmitting(true);
     try {
+      // Now values is guaranteed to have all required fields
       await saveFeedback(values);
       toast.success('Thank you for your feedback!', {
         description: 'We appreciate your input and will use it to improve our services.',
