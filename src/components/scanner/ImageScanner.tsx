@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { getFoodItemByName } from '@/utils/foodDatabase';
 
 const organicFoodDatabase = {
   'Apple': {
@@ -292,26 +293,33 @@ const ImageScanner = () => {
     }
   };
 
-  const analyzeCapturedImage = () => {
+  const analyzeCapturedImage = async () => {
     setScanning(true);
     setResult(null);
     setFoodInfo(null);
     setVerificationData(null);
     
-    setTimeout(() => {
-      const possibleFoods = Object.keys(organicFoodDatabase);
+    try {
+      const possibleFoods = ['Apple', 'Spinach', 'Tomato', 'Carrot', 'Broccoli', 'Banana'];
       const recognizedFood = possibleFoods[Math.floor(Math.random() * possibleFoods.length)];
       
-      setResult(recognizedFood);
+      const foodData = await getFoodItemByName(recognizedFood);
+      
+      if (foodData) {
+        setResult(foodData.name);
+        setFoodInfo(foodData);
+        setVerificationData(foodData.verifications);
+        toast.success(`Identified as ${foodData.name}!`);
+      } else {
+        toast.error('Food not found in database');
+      }
+      
       setScanning(false);
-      
-      const info = organicFoodDatabase[recognizedFood as keyof typeof organicFoodDatabase];
-      setFoodInfo(info);
-      
-      toast.success(`Identified as ${recognizedFood}!`);
-      
-      verifyOrganicStatus(recognizedFood);
-    }, 2000);
+    } catch (error) {
+      console.error('Error analyzing image:', error);
+      toast.error('Unable to analyze image');
+      setScanning(false);
+    }
   };
 
   const verifyOrganicStatus = (foodItem: string) => {

@@ -13,8 +13,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { getFoodItemByBarcode } from '@/utils/foodDatabase';
 
-// Enhanced product database with more detailed nutritional information and preservation data
 const organicProductsDatabase = {
   '8901063152227': {
     name: 'Organic Honey',
@@ -98,7 +98,6 @@ const organicProductsDatabase = {
   }
 };
 
-// Mock data for organic verification from different websites
 const mockOrganicVerificationData = {
   '8901063152227': [
     { source: 'OrganicCertifier.org', isOrganic: true, certificationId: 'ORG-7823-IN' },
@@ -208,11 +207,23 @@ const BarcodeScanner = () => {
     }
   };
 
-  const processBarcode = (barcode: string) => {
-    const product = organicProductsDatabase[barcode as keyof typeof organicProductsDatabase];
-    setProductInfo(product || null);
-    
-    verifyOrganicStatus(barcode);
+  const processBarcode = async (barcode: string) => {
+    try {
+      const foodData = await getFoodItemByBarcode(barcode);
+      
+      if (foodData) {
+        setProductInfo(foodData);
+        setVerificationData(foodData.verifications);
+        toast.success(`Found product: ${foodData.name}`);
+      } else {
+        toast.error('Product not found in database');
+        setProductInfo(null);
+        setVerificationData(null);
+      }
+    } catch (error) {
+      console.error('Error fetching food item:', error);
+      toast.error('Unable to retrieve product information');
+    }
   };
 
   const verifyOrganicStatus = (barcode: string) => {

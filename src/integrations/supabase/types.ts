@@ -9,7 +9,219 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      certification_sources: {
+        Row: {
+          description: string | null
+          id: number
+          name: string
+          website: string | null
+        }
+        Insert: {
+          description?: string | null
+          id?: number
+          name: string
+          website?: string | null
+        }
+        Update: {
+          description?: string | null
+          id?: number
+          name?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
+      food_categories: {
+        Row: {
+          description: string | null
+          id: number
+          name: string
+        }
+        Insert: {
+          description?: string | null
+          id?: number
+          name: string
+        }
+        Update: {
+          description?: string | null
+          id?: number
+          name?: string
+        }
+        Relationships: []
+      }
+      food_items: {
+        Row: {
+          barcode: string | null
+          brand: string | null
+          category_id: number | null
+          created_at: string | null
+          growth_conditions: string | null
+          id: string
+          ingredients: string | null
+          is_organic: boolean | null
+          name: string
+          organic_cultivation: string | null
+          origin: string | null
+          season: string | null
+          updated_at: string | null
+          variety: string | null
+        }
+        Insert: {
+          barcode?: string | null
+          brand?: string | null
+          category_id?: number | null
+          created_at?: string | null
+          growth_conditions?: string | null
+          id?: string
+          ingredients?: string | null
+          is_organic?: boolean | null
+          name: string
+          organic_cultivation?: string | null
+          origin?: string | null
+          season?: string | null
+          updated_at?: string | null
+          variety?: string | null
+        }
+        Update: {
+          barcode?: string | null
+          brand?: string | null
+          category_id?: number | null
+          created_at?: string | null
+          growth_conditions?: string | null
+          id?: string
+          ingredients?: string | null
+          is_organic?: boolean | null
+          name?: string
+          organic_cultivation?: string | null
+          origin?: string | null
+          season?: string | null
+          updated_at?: string | null
+          variety?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "food_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "food_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nutrients: {
+        Row: {
+          daily_value_percent: number | null
+          food_id: string | null
+          id: number
+          nutrient_name: string
+          unit: string | null
+          value: string | null
+        }
+        Insert: {
+          daily_value_percent?: number | null
+          food_id?: string | null
+          id?: number
+          nutrient_name: string
+          unit?: string | null
+          value?: string | null
+        }
+        Update: {
+          daily_value_percent?: number | null
+          food_id?: string | null
+          id?: number
+          nutrient_name?: string
+          unit?: string | null
+          value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nutrients_food_id_fkey"
+            columns: ["food_id"]
+            isOneToOne: false
+            referencedRelation: "food_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organic_verifications: {
+        Row: {
+          certification_date: string | null
+          certification_id: string | null
+          food_id: string | null
+          id: number
+          is_verified: boolean
+          notes: string | null
+          source_id: number | null
+        }
+        Insert: {
+          certification_date?: string | null
+          certification_id?: string | null
+          food_id?: string | null
+          id?: number
+          is_verified: boolean
+          notes?: string | null
+          source_id?: number | null
+        }
+        Update: {
+          certification_date?: string | null
+          certification_id?: string | null
+          food_id?: string | null
+          id?: number
+          is_verified?: boolean
+          notes?: string | null
+          source_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organic_verifications_food_id_fkey"
+            columns: ["food_id"]
+            isOneToOne: false
+            referencedRelation: "food_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organic_verifications_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "certification_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      preservation_guidelines: {
+        Row: {
+          food_id: string | null
+          id: number
+          refrigerated_duration: string | null
+          room_temp_duration: string | null
+          storage_method: string | null
+          tips: string | null
+        }
+        Insert: {
+          food_id?: string | null
+          id?: number
+          refrigerated_duration?: string | null
+          room_temp_duration?: string | null
+          storage_method?: string | null
+          tips?: string | null
+        }
+        Update: {
+          food_id?: string | null
+          id?: number
+          refrigerated_duration?: string | null
+          room_temp_duration?: string | null
+          storage_method?: string | null
+          tips?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preservation_guidelines_food_id_fkey"
+            columns: ["food_id"]
+            isOneToOne: false
+            referencedRelation: "food_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
