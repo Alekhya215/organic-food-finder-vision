@@ -1,13 +1,20 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Barcode, Camera, Check, X, AlertCircle, Globe } from 'lucide-react';
+import { Barcode, Camera, Check, X, AlertCircle, Globe, Calendar, Timer } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { 
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
-// Real barcodes database (simulated)
+// Enhanced product database with more detailed nutritional information and preservation data
 const organicProductsDatabase = {
   '8901063152227': {
     name: 'Organic Honey',
@@ -15,6 +22,19 @@ const organicProductsDatabase = {
     ingredients: 'Pure Organic Honey',
     nutritionalInfo: 'Energy: 304 kcal, Carbohydrates: 82g, Sugars: 82g',
     origin: 'Himalayan Valleys, India',
+    nutrients: {
+      carbohydrates: { value: 82, percent: 27 },
+      protein: { value: 0.3, percent: 0.6 },
+      fat: { value: 0, percent: 0 },
+      sugar: { value: 82, percent: 91 },
+      fiber: { value: 0, percent: 0 },
+      sodium: { value: 0.004, percent: 0 }
+    },
+    preservation: {
+      method: 'Store in cool, dry place',
+      duration: '24 months',
+      tips: 'Keep tightly sealed. Natural crystallization may occur; warm gently to restore liquid state.'
+    }
   },
   '5000112637922': {
     name: 'Organic Quinoa',
@@ -22,6 +42,19 @@ const organicProductsDatabase = {
     ingredients: '100% Organic White Quinoa',
     nutritionalInfo: 'Energy: 368 kcal, Protein: 14g, Carbohydrates: 64g, Fat: 6g',
     origin: 'Andean Mountains, Peru',
+    nutrients: {
+      carbohydrates: { value: 64, percent: 21 },
+      protein: { value: 14, percent: 28 },
+      fat: { value: 6, percent: 9 },
+      sugar: { value: 2, percent: 2 },
+      fiber: { value: 7, percent: 28 },
+      sodium: { value: 0.007, percent: 0 }
+    },
+    preservation: {
+      method: 'Store in airtight container',
+      duration: '12-24 months',
+      tips: 'Keep in cool, dry place. Refrigerate after opening for extended freshness.'
+    }
   },
   '8901719110018': {
     name: 'Green Tea',
@@ -29,6 +62,19 @@ const organicProductsDatabase = {
     ingredients: 'Green Tea Leaves, Natural Flavors',
     nutritionalInfo: 'Energy: 0 kcal, Antioxidants: High',
     origin: 'Darjeeling, India',
+    nutrients: {
+      carbohydrates: { value: 0, percent: 0 },
+      protein: { value: 0, percent: 0 },
+      fat: { value: 0, percent: 0 },
+      sugar: { value: 0, percent: 0 },
+      antioxidants: { value: 'High', percent: null },
+      polyphenols: { value: '30-40% of dry weight', percent: null }
+    },
+    preservation: {
+      method: 'Store in airtight container',
+      duration: '18-24 months',
+      tips: 'Keep away from strong odors, moisture, heat, and light. Do not refrigerate.'
+    }
   },
   '8902080527022': {
     name: 'Organic Coconut Oil',
@@ -36,6 +82,19 @@ const organicProductsDatabase = {
     ingredients: '100% Cold-Pressed Organic Coconut Oil',
     nutritionalInfo: 'Energy: 862 kcal, Fat: 100g, Saturated Fat: 86.5g',
     origin: 'Kerala, India',
+    nutrients: {
+      carbohydrates: { value: 0, percent: 0 },
+      protein: { value: 0, percent: 0 },
+      fat: { value: 100, percent: 153 },
+      saturatedFat: { value: 86.5, percent: 432 },
+      monounsaturatedFat: { value: 6.3, percent: null },
+      polyunsaturatedFat: { value: 1.7, percent: null }
+    },
+    preservation: {
+      method: 'Store in cool, dry place',
+      duration: '18-24 months',
+      tips: 'Natural solidification occurs below 76°F (24°C). No refrigeration required.'
+    }
   }
 };
 
@@ -75,7 +134,6 @@ const BarcodeScanner = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  // Clean up video stream when component unmounts
   useEffect(() => {
     return () => {
       if (streamRef.current) {
@@ -122,17 +180,13 @@ const BarcodeScanner = () => {
   const handleScan = () => {
     setScanning(true);
     
-    // For a real scanner, we would analyze video frames
-    // For simulation, we'll provide a realistic experience
     setTimeout(() => {
       let barcodeToUse;
       
       if (Math.random() > 0.5) {
-        // Simulate actual scan of one of our known barcodes
         const mockBarcodes = Object.keys(organicProductsDatabase);
         barcodeToUse = mockBarcodes[Math.floor(Math.random() * mockBarcodes.length)];
       } else {
-        // Simulate scanning a random barcode
         barcodeToUse = Math.floor(Math.random() * 9000000000000) + 1000000000000;
       }
       
@@ -140,7 +194,6 @@ const BarcodeScanner = () => {
       setScanning(false);
       toast.success('Barcode scanned successfully!');
       
-      // Look up product and trigger verification
       processBarcode(barcodeToUse.toString());
     }, 2000);
   };
@@ -156,11 +209,9 @@ const BarcodeScanner = () => {
   };
 
   const processBarcode = (barcode: string) => {
-    // Look up product info
     const product = organicProductsDatabase[barcode as keyof typeof organicProductsDatabase];
     setProductInfo(product || null);
     
-    // Verify organic status
     verifyOrganicStatus(barcode);
   };
 
@@ -168,16 +219,12 @@ const BarcodeScanner = () => {
     setIsVerifying(true);
     setVerificationData(null);
     
-    // Simulate API calls to different websites
     setTimeout(() => {
-      // For known barcodes, use our predefined results
-      // For unknown barcodes, generate random verification results
       let data;
       
       if (mockOrganicVerificationData[barcode as keyof typeof mockOrganicVerificationData]) {
         data = mockOrganicVerificationData[barcode as keyof typeof mockOrganicVerificationData];
       } else {
-        // Generate random verification for unknown barcode
         const randomOrganic = Math.random() > 0.5;
         const randomDate = new Date();
         randomDate.setDate(randomDate.getDate() - Math.floor(Math.random() * 365));
@@ -198,7 +245,7 @@ const BarcodeScanner = () => {
           },
           { 
             source: Math.random() > 0.5 ? 'USDAOrganicList.gov' : 'EUOrganicRegistry.eu', 
-            isOrganic: Math.random() > 0.7, // Sometimes disagrees with others
+            isOrganic: Math.random() > 0.7,
             notes: 'Status may vary by region'
           }
         ];
@@ -207,7 +254,6 @@ const BarcodeScanner = () => {
       setVerificationData(data);
       setIsVerifying(false);
       
-      // Calculate if majority say it's organic
       const organicCount = data.filter(item => item.isOrganic).length;
       if (organicCount > data.length / 2) {
         toast.success('Product verified as organic by majority of sources!');
@@ -217,7 +263,6 @@ const BarcodeScanner = () => {
     }, 1500);
   };
 
-  // Calculate overall organic status
   const getOverallOrganicStatus = () => {
     if (!verificationData) return null;
     
@@ -240,7 +285,6 @@ const BarcodeScanner = () => {
             Point your camera at a barcode on a packaged organic food product
           </p>
           
-          {/* Manual barcode entry */}
           <form onSubmit={handleManualSubmit} className="w-full">
             <div className="flex gap-2">
               <Input
@@ -342,6 +386,40 @@ const BarcodeScanner = () => {
                     <p><span className="font-medium">Ingredients:</span> {productInfo.ingredients}</p>
                     <p><span className="font-medium">Nutrition:</span> {productInfo.nutritionalInfo}</p>
                     <p><span className="font-medium">Origin:</span> {productInfo.origin}</p>
+                    
+                    <div className="mt-3 pt-2 border-t border-gray-100">
+                      <div className="flex items-center mb-1">
+                        <Timer className="h-3 w-3 mr-1 text-organic" />
+                        <p className="font-medium">Preservation:</p>
+                      </div>
+                      <p><span className="font-medium">Duration:</span> {productInfo.preservation.duration}</p>
+                      <p><span className="font-medium">Method:</span> {productInfo.preservation.method}</p>
+                      <p className="text-xs italic mt-1">{productInfo.preservation.tips}</p>
+                    </div>
+                    
+                    <div className="mt-3 pt-2 border-t border-gray-100">
+                      <p className="font-medium mb-1">Detailed Nutritional Information:</p>
+                      <div className="max-h-40 overflow-y-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="py-1 px-2">Nutrient</TableHead>
+                              <TableHead className="py-1 px-2">Amount</TableHead>
+                              <TableHead className="py-1 px-2">% Daily Value</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {Object.entries(productInfo.nutrients).map(([nutrient, data]: [string, any]) => (
+                              <TableRow key={nutrient}>
+                                <TableCell className="py-1 px-2 capitalize">{nutrient}</TableCell>
+                                <TableCell className="py-1 px-2">{data.value}{typeof data.value === 'number' ? 'g' : ''}</TableCell>
+                                <TableCell className="py-1 px-2">{data.percent !== null ? `${data.percent}%` : '-'}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}

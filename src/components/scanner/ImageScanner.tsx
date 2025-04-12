@@ -1,12 +1,18 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Image as ImageIcon, Camera, Check, X, Globe, Upload } from 'lucide-react';
+import { Image as ImageIcon, Camera, Check, X, Globe, Upload, Timer, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
-// Real food database (simulated)
 const organicFoodDatabase = {
   'Apple': {
     name: 'Organic Apple',
@@ -16,6 +22,21 @@ const organicFoodDatabase = {
     season: 'Late Summer to Fall',
     growthConditions: 'Temperate climate, well-drained soil',
     organicCultivation: 'No synthetic pesticides, natural fertilizers only',
+    detailedNutrients: {
+      calories: { value: 52, percent: 3 },
+      carbohydrates: { value: 13.8, percent: 5 },
+      protein: { value: 0.3, percent: 1 },
+      fat: { value: 0.2, percent: 0 },
+      sugar: { value: 10.4, percent: 12 },
+      fiber: { value: 2.4, percent: 10 },
+      vitaminC: { value: 4.6, percent: 5 },
+      potassium: { value: 107, unit: 'mg', percent: 3 }
+    },
+    preservation: {
+      refrigerated: '3-4 weeks',
+      roomTemp: '5-7 days',
+      tips: 'Store in crisper drawer. Keep away from ethylene-producing fruits.'
+    }
   },
   'Spinach': {
     name: 'Organic Spinach',
@@ -25,6 +46,22 @@ const organicFoodDatabase = {
     season: 'Spring and Fall',
     growthConditions: 'Cool weather, moist soil',
     organicCultivation: 'Crop rotation, natural pest management',
+    detailedNutrients: {
+      calories: { value: 23, percent: 1 },
+      carbohydrates: { value: 3.6, percent: 1 },
+      protein: { value: 2.9, percent: 6 },
+      fat: { value: 0.4, percent: 1 },
+      fiber: { value: 2.2, percent: 9 },
+      vitaminA: { value: 9400, unit: 'IU', percent: 188 },
+      vitaminK: { value: 483, unit: 'μg', percent: 403 },
+      iron: { value: 2.7, unit: 'mg', percent: 15 },
+      calcium: { value: 99, unit: 'mg', percent: 10 }
+    },
+    preservation: {
+      refrigerated: '5-7 days',
+      roomTemp: '1-2 days',
+      tips: 'Store in plastic bag with paper towel to absorb moisture. Wash just before use.'
+    }
   },
   'Tomato': {
     name: 'Tomato',
@@ -34,6 +71,21 @@ const organicFoodDatabase = {
     season: 'Summer',
     growthConditions: 'Warm weather, even watering',
     organicCultivation: 'Often grown with conventional methods',
+    detailedNutrients: {
+      calories: { value: 18, percent: 1 },
+      carbohydrates: { value: 3.9, percent: 1 },
+      protein: { value: 0.9, percent: 2 },
+      fat: { value: 0.2, percent: 0 },
+      fiber: { value: 1.2, percent: 5 },
+      vitaminC: { value: 13.7, unit: 'mg', percent: 15 },
+      potassium: { value: 237, unit: 'mg', percent: 5 },
+      lycopene: { value: 2.6, unit: 'mg', percent: null }
+    },
+    preservation: {
+      refrigerated: '1-2 weeks (not fully ripe)',
+      roomTemp: '4-7 days (ripe)',
+      tips: 'Store at room temperature for best flavor. Refrigeration can diminish flavor.'
+    }
   },
   'Carrots': {
     name: 'Organic Carrots',
@@ -43,6 +95,22 @@ const organicFoodDatabase = {
     season: 'Year-round (peak in fall)',
     growthConditions: 'Loose, sandy soil, moderate water',
     organicCultivation: 'Cover crops, natural compost fertilizers',
+    detailedNutrients: {
+      calories: { value: 41, percent: 2 },
+      carbohydrates: { value: 9.6, percent: 3 },
+      protein: { value: 0.9, percent: 2 },
+      fat: { value: 0.2, percent: 0 },
+      fiber: { value: 2.8, percent: 11 },
+      sugar: { value: 4.7, percent: 5 },
+      vitaminA: { value: 16706, unit: 'IU', percent: 334 },
+      betaCarotene: { value: 8285, unit: 'μg', percent: null },
+      potassium: { value: 320, unit: 'mg', percent: 7 }
+    },
+    preservation: {
+      refrigerated: '3-4 weeks',
+      roomTemp: '3-5 days',
+      tips: 'Remove leafy tops before storing. Keep in crisper drawer in perforated plastic bag.'
+    }
   },
   'Broccoli': {
     name: 'Organic Broccoli',
@@ -52,6 +120,21 @@ const organicFoodDatabase = {
     season: 'Fall and Spring',
     growthConditions: 'Cool weather, consistent moisture',
     organicCultivation: 'Companion planting, natural pest deterrents',
+    detailedNutrients: {
+      calories: { value: 34, percent: 2 },
+      carbohydrates: { value: 6.6, percent: 2 },
+      protein: { value: 2.8, percent: 6 },
+      fat: { value: 0.4, percent: 1 },
+      fiber: { value: 2.6, percent: 10 },
+      vitaminC: { value: 89.2, unit: 'mg', percent: 99 },
+      vitaminK: { value: 102, unit: 'μg', percent: 85 },
+      folate: { value: 63, unit: 'μg', percent: 16 }
+    },
+    preservation: {
+      refrigerated: '3-5 days',
+      roomTemp: '1-2 days',
+      tips: 'Store unwashed in open plastic bag. Sprinkle with water if storing longer than 2 days.'
+    }
   },
   'Banana': {
     name: 'Organic Banana',
@@ -61,10 +144,24 @@ const organicFoodDatabase = {
     season: 'Year-round',
     growthConditions: 'Tropical climate, high humidity',
     organicCultivation: 'Natural composts, no synthetic chemicals',
+    detailedNutrients: {
+      calories: { value: 89, percent: 4 },
+      carbohydrates: { value: 22.8, percent: 8 },
+      protein: { value: 1.1, percent: 2 },
+      fat: { value: 0.3, percent: 0 },
+      fiber: { value: 2.6, percent: 10 },
+      sugar: { value: 12.2, percent: 14 },
+      potassium: { value: 358, unit: 'mg', percent: 8 },
+      vitaminB6: { value: 0.4, unit: 'mg', percent: 20 }
+    },
+    preservation: {
+      refrigerated: '5-7 days (ripe, skin will blacken)',
+      roomTemp: '2-5 days (ripe)',
+      tips: 'Store at room temperature until ripe. Refrigerate only when fully ripe. Keep separate from other fruits to prevent over-ripening.'
+    }
   }
 };
 
-// Mock data for organic verification from different websites by food type
 const mockOrganicVerificationData = {
   'Apple': [
     { source: 'OrganicProduce.org', isOrganic: true, certificationId: 'USDA-NOP-85241' },
@@ -113,7 +210,6 @@ const ImageScanner = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  // Clean up video stream when component unmounts
   useEffect(() => {
     return () => {
       if (streamRef.current) {
@@ -164,18 +260,14 @@ const ImageScanner = () => {
       const context = canvas.getContext('2d');
       
       if (context) {
-        // Set canvas dimensions to match video
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         
-        // Draw current video frame to canvas
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         
-        // Convert canvas to data URL
         const imageDataUrl = canvas.toDataURL('image/jpeg');
         setCapturedImage(imageDataUrl);
         
-        // Begin analysis
         analyzeCapturedImage();
       }
     }
@@ -187,11 +279,9 @@ const ImageScanner = () => {
       const file = files[0];
       setUploadedImage(file);
       
-      // Create URL for preview
       const imageUrl = URL.createObjectURL(file);
       setCapturedImage(imageUrl);
       
-      // Begin analysis
       analyzeCapturedImage();
     }
   };
@@ -208,8 +298,6 @@ const ImageScanner = () => {
     setFoodInfo(null);
     setVerificationData(null);
     
-    // In a real app, we would send this image to an AI service for recognition
-    // For simulation purposes, we'll just use a timeout and random selection
     setTimeout(() => {
       const possibleFoods = Object.keys(organicFoodDatabase);
       const recognizedFood = possibleFoods[Math.floor(Math.random() * possibleFoods.length)];
@@ -217,13 +305,11 @@ const ImageScanner = () => {
       setResult(recognizedFood);
       setScanning(false);
       
-      // Set food info
       const info = organicFoodDatabase[recognizedFood as keyof typeof organicFoodDatabase];
       setFoodInfo(info);
       
       toast.success(`Identified as ${recognizedFood}!`);
       
-      // Trigger verification after analysis
       verifyOrganicStatus(recognizedFood);
     }, 2000);
   };
@@ -231,17 +317,13 @@ const ImageScanner = () => {
   const verifyOrganicStatus = (foodItem: string) => {
     setIsVerifying(true);
     
-    // Simulate API calls to different websites
     setTimeout(() => {
-      // Use our predefined verification data for known foods
-      // For unknown foods, generate random verification results
       let data;
       
       if (mockOrganicVerificationData[foodItem as keyof typeof mockOrganicVerificationData]) {
         data = mockOrganicVerificationData[foodItem as keyof typeof mockOrganicVerificationData];
       } else {
-        // Generate random verification for unknown food
-        const randomOrganic = Math.random() > 0.3; // Most foods are likely organic in this context
+        const randomOrganic = Math.random() > 0.3;
         const randomDate = new Date();
         randomDate.setDate(randomDate.getDate() - Math.floor(Math.random() * 365));
         const dateStr = randomDate.toISOString().split('T')[0];
@@ -261,7 +343,7 @@ const ImageScanner = () => {
           },
           { 
             source: Math.random() > 0.5 ? 'ProduceDatabase.org' : 'OrganicVerify.com', 
-            isOrganic: Math.random() > 0.2, // High chance of being organic
+            isOrganic: Math.random() > 0.2,
             notes: 'Visual characteristics consistent with organic farming'
           }
         ];
@@ -270,7 +352,6 @@ const ImageScanner = () => {
       setVerificationData(data);
       setIsVerifying(false);
       
-      // Calculate if majority say it's organic
       const organicCount = data.filter(item => item.isOrganic).length;
       if (organicCount > data.length / 2) {
         toast.success('Item verified as organic by majority of sources!');
@@ -292,7 +373,6 @@ const ImageScanner = () => {
     }
   };
 
-  // Calculate overall organic status
   const getOverallOrganicStatus = () => {
     if (!verificationData) return null;
     
@@ -315,7 +395,6 @@ const ImageScanner = () => {
             Take a picture of unpacked organic food items to identify them
           </p>
           
-          {/* Hidden file input */}
           <input 
             type="file" 
             ref={fileInputRef} 
@@ -377,7 +456,6 @@ const ImageScanner = () => {
               </div>
             )}
             
-            {/* Hidden canvas for image capture */}
             <canvas ref={canvasRef} className="hidden" />
           </div>
           
@@ -455,6 +533,42 @@ const ImageScanner = () => {
                   <p><span className="font-medium">Benefits:</span> {foodInfo.benefits}</p>
                   <p><span className="font-medium">Season:</span> {foodInfo.season}</p>
                   <p><span className="font-medium">Growing:</span> {foodInfo.organicCultivation}</p>
+                  
+                  <div className="mt-3 pt-2 border-t border-gray-100">
+                    <div className="flex items-center mb-1">
+                      <Timer className="h-3 w-3 mr-1 text-earthy" />
+                      <p className="font-medium">Preservation Time:</p>
+                    </div>
+                    <p><span className="font-medium">Refrigerated:</span> {foodInfo.preservation.refrigerated}</p>
+                    <p><span className="font-medium">Room Temperature:</span> {foodInfo.preservation.roomTemp}</p>
+                    <p className="text-xs italic mt-1">{foodInfo.preservation.tips}</p>
+                  </div>
+                  
+                  <div className="mt-3 pt-2 border-t border-gray-100">
+                    <p className="font-medium mb-1">Detailed Nutritional Information (per 100g):</p>
+                    <div className="max-h-40 overflow-y-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="py-1 px-2">Nutrient</TableHead>
+                            <TableHead className="py-1 px-2">Amount</TableHead>
+                            <TableHead className="py-1 px-2">% Daily Value</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {Object.entries(foodInfo.detailedNutrients).map(([nutrient, data]: [string, any]) => (
+                            <TableRow key={nutrient}>
+                              <TableCell className="py-1 px-2 capitalize">{nutrient}</TableCell>
+                              <TableCell className="py-1 px-2">
+                                {data.value}{data.unit || (typeof data.value === 'number' && ['calories', 'percent'].indexOf(nutrient) === -1 ? 'g' : '')}
+                              </TableCell>
+                              <TableCell className="py-1 px-2">{data.percent !== null ? `${data.percent}%` : '-'}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
                 </div>
               </div>
               
