@@ -160,7 +160,8 @@ const BarcodeScanner = () => {
       setProductInfo(prev => prev ? { ...prev, ...updatedItem } : null);
       toast({
         title: "Food Item Updated",
-        description: "Food information has been updated in real-time"
+        description: "Food information has been updated in real-time",
+        variant: "default"
       });
     });
 
@@ -169,7 +170,8 @@ const BarcodeScanner = () => {
       setProductInfo(prev => prev ? { ...prev, nutrients: updatedNutrients } : null);
       toast({
         title: "Nutrients Updated",
-        description: "Nutritional information has been updated in real-time"
+        description: "Nutritional information has been updated in real-time",
+        variant: "default"
       });
     });
 
@@ -178,7 +180,8 @@ const BarcodeScanner = () => {
       setProductInfo(prev => prev ? { ...prev, preservation: updatedPreservation } : null);
       toast({
         title: "Preservation Guidelines Updated",
-        description: "Storage information has been updated in real-time"
+        description: "Storage information has been updated in real-time",
+        variant: "default"
       });
     });
 
@@ -187,7 +190,8 @@ const BarcodeScanner = () => {
       setProductInfo(prev => prev ? { ...prev, verifications: updatedVerifications } : null);
       toast({
         title: "Organic Verification Updated",
-        description: "Certification information has been updated in real-time"
+        description: "Certification information has been updated in real-time",
+        variant: "default"
       });
     });
 
@@ -213,11 +217,19 @@ const BarcodeScanner = () => {
       }
       
       setCameraActive(true);
-      toast.success('Camera activated successfully');
+      toast({
+        title: "Success",
+        description: "Camera activated successfully",
+        variant: "default"
+      });
     } catch (error) {
       console.error('Error accessing camera:', error);
       setHasCameraPermission(false);
-      toast.error('Could not access camera. Please check permissions.');
+      toast({
+        title: "Error",
+        description: "Could not access camera. Please check permissions.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -249,7 +261,11 @@ const BarcodeScanner = () => {
       
       setResult(barcodeToUse.toString());
       setScanning(false);
-      toast.success('Barcode scanned successfully!');
+      toast({
+        title: "Success",
+        description: "Barcode scanned successfully!",
+        variant: "default"
+      });
       
       processBarcode(barcodeToUse.toString());
     }, 2000);
@@ -261,7 +277,11 @@ const BarcodeScanner = () => {
       setResult(manualBarcode);
       processBarcode(manualBarcode);
     } else {
-      toast.error('Please enter a valid barcode (at least 8 digits)');
+      toast({
+        title: "Error",
+        description: "Please enter a valid barcode (at least 8 digits)",
+        variant: "destructive"
+      });
     }
   };
 
@@ -276,7 +296,8 @@ const BarcodeScanner = () => {
         setVerificationData(foodData.verifications);
         toast({
           title: "Product Found",
-          description: `Found product: ${foodData.name}`
+          description: `Found product: ${foodData.name}`,
+          variant: "default"
         });
       } else {
         toast({
@@ -306,6 +327,14 @@ const BarcodeScanner = () => {
       
       if (mockOrganicVerificationData[barcode as keyof typeof mockOrganicVerificationData]) {
         data = mockOrganicVerificationData[barcode as keyof typeof mockOrganicVerificationData];
+        
+        data = data.map((item: any) => ({
+          source_name: item.source,
+          is_verified: item.isOrganic,
+          certification_id: item.certificationId,
+          certification_date: item.certificationDate,
+          notes: item.notes
+        }));
       } else {
         const randomOrganic = Math.random() > 0.5;
         const randomDate = new Date();
@@ -314,20 +343,20 @@ const BarcodeScanner = () => {
         
         data = [
           { 
-            source: 'OrganicCertifier.org', 
-            isOrganic: randomOrganic, 
-            certificationId: randomOrganic ? `ORG-${Math.floor(Math.random() * 10000)}-ID` : null,
+            source_name: 'OrganicCertifier.org', 
+            is_verified: randomOrganic, 
+            certification_id: randomOrganic ? `ORG-${Math.floor(Math.random() * 10000)}-ID` : undefined,
             notes: randomOrganic ? 'Verified organic' : 'Not found in database'
           },
           { 
-            source: 'GlobalOrganicDatabase.com', 
-            isOrganic: randomOrganic, 
-            certificationDate: randomOrganic ? dateStr : null,
+            source_name: 'GlobalOrganicDatabase.com', 
+            is_verified: randomOrganic, 
+            certification_date: randomOrganic ? dateStr : undefined,
             notes: randomOrganic ? 'Certification valid' : 'No certification record'
           },
           { 
-            source: Math.random() > 0.5 ? 'USDAOrganicList.gov' : 'EUOrganicRegistry.eu', 
-            isOrganic: Math.random() > 0.7,
+            source_name: Math.random() > 0.5 ? 'USDAOrganicList.gov' : 'EUOrganicRegistry.eu', 
+            is_verified: Math.random() > 0.7,
             notes: 'Status may vary by region'
           }
         ];
@@ -336,11 +365,19 @@ const BarcodeScanner = () => {
       setVerificationData(data);
       setIsVerifying(false);
       
-      const organicCount = data.filter(item => item.isOrganic).length;
+      const organicCount = data.filter(item => item.is_verified).length;
       if (organicCount > data.length / 2) {
-        toast.success('Product verified as organic by majority of sources!');
+        toast({
+          title: "Verified Organic",
+          description: "Product verified as organic by majority of sources!",
+          variant: "default"
+        });
       } else {
-        toast.error('Product may not be organic. Check verification details.');
+        toast({
+          title: "Verification Failed",
+          description: "Product may not be organic. Check verification details.",
+          variant: "destructive"
+        });
       }
     }, 1500);
   };
@@ -348,7 +385,7 @@ const BarcodeScanner = () => {
   const getOverallOrganicStatus = () => {
     if (!verificationData) return null;
     
-    const organicCount = verificationData.filter(item => item.isOrganic).length;
+    const organicCount = verificationData.filter(item => item.is_verified).length;
     return organicCount > verificationData.length / 2;
   };
 
@@ -468,7 +505,7 @@ const BarcodeScanner = () => {
                   <div className="text-xs text-gray-700 mt-1 space-y-1">
                     <p><span className="font-medium">Brand:</span> {productInfo.brand}</p>
                     <p><span className="font-medium">Ingredients:</span> {productInfo.ingredients}</p>
-                    <p><span className="font-medium">Nutrition:</span> {productInfo.nutritionalInfo}</p>
+                    <p><span className="font-medium">Nutrition:</span> {productInfo.nutrients?.length} nutrient entries available</p>
                     <p><span className="font-medium">Origin:</span> {productInfo.origin}</p>
                     
                     <div className="mt-3 pt-2 border-t border-gray-100">
@@ -476,8 +513,8 @@ const BarcodeScanner = () => {
                         <Timer className="h-3 w-3 mr-1 text-organic" />
                         <p className="font-medium">Preservation:</p>
                       </div>
-                      <p><span className="font-medium">Duration:</span> {productInfo.preservation.duration}</p>
-                      <p><span className="font-medium">Method:</span> {productInfo.preservation.method}</p>
+                      <p><span className="font-medium">Refrigerated:</span> {productInfo.preservation.refrigerated_duration}</p>
+                      <p><span className="font-medium">Storage Method:</span> {productInfo.preservation.storage_method}</p>
                       <p className="text-xs italic mt-1">{productInfo.preservation.tips}</p>
                     </div>
                     
@@ -493,11 +530,11 @@ const BarcodeScanner = () => {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {Object.entries(productInfo.nutrients).map(([nutrient, data]: [string, any]) => (
-                              <TableRow key={nutrient}>
-                                <TableCell className="py-1 px-2 capitalize">{nutrient}</TableCell>
-                                <TableCell className="py-1 px-2">{data.value}{typeof data.value === 'number' ? 'g' : ''}</TableCell>
-                                <TableCell className="py-1 px-2">{data.percent !== null ? `${data.percent}%` : '-'}</TableCell>
+                            {productInfo.nutrients.map((nutrient, index) => (
+                              <TableRow key={index}>
+                                <TableCell className="py-1 px-2 capitalize">{nutrient.nutrient_name}</TableCell>
+                                <TableCell className="py-1 px-2">{nutrient.value} {nutrient.unit}</TableCell>
+                                <TableCell className="py-1 px-2">{nutrient.daily_value_percent !== null ? `${nutrient.daily_value_percent}%` : '-'}</TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
@@ -536,8 +573,8 @@ const BarcodeScanner = () => {
                       {verificationData.map((item, index) => (
                         <li key={index} className="py-2">
                           <div className="flex justify-between items-center">
-                            <span className="font-medium truncate max-w-[180px]">{item.source}</span>
-                            {item.isOrganic ? (
+                            <span className="font-medium truncate max-w-[180px]">{item.source_name}</span>
+                            {item.is_verified ? (
                               <span className="flex items-center text-green-600">
                                 <Check className="h-3 w-3 mr-1" /> Verified
                               </span>
@@ -548,8 +585,8 @@ const BarcodeScanner = () => {
                             )}
                           </div>
                           <div className="text-gray-500 mt-1">
-                            {item.certificationId && <div>ID: {item.certificationId}</div>}
-                            {item.certificationDate && <div>Date: {item.certificationDate}</div>}
+                            {item.certification_id && <div>ID: {item.certification_id}</div>}
+                            {item.certification_date && <div>Date: {item.certification_date}</div>}
                             {item.notes && <div>Note: {item.notes}</div>}
                           </div>
                         </li>

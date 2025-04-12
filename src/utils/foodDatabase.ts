@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 export interface FoodItem {
   id: string;
@@ -69,13 +69,21 @@ export async function getFoodItemByBarcode(barcode: string): Promise<FoodItemWit
 
   const { data: verifications, error: verificationError } = await supabase
     .from('organic_verifications')
-    .select('is_verified, certification_id, certification_date, notes, certification_sources(name)')
+    .select('source_id, is_verified, certification_id, certification_date, notes, certification_sources(name)')
     .eq('food_id', foodItem.id);
+
+  // Create a default preservation guideline if none exists
+  const preservationData: PreservationGuideline = preservation || {
+    refrigerated_duration: "Unknown",
+    room_temp_duration: "Unknown",
+    storage_method: "Store appropriately",
+    tips: "No specific guidelines available"
+  };
 
   return {
     ...foodItem,
     nutrients: nutrients || [],
-    preservation: preservation || {},
+    preservation: preservationData,
     verifications: verifications?.map(v => ({
       source_name: v.certification_sources?.name || 'Unknown Source',
       is_verified: v.is_verified,
@@ -110,13 +118,21 @@ export async function getFoodItemByName(name: string): Promise<FoodItemWithDetai
 
   const { data: verifications, error: verificationError } = await supabase
     .from('organic_verifications')
-    .select('is_verified, certification_id, certification_date, notes, certification_sources(name)')
+    .select('source_id, is_verified, certification_id, certification_date, notes, certification_sources(name)')
     .eq('food_id', foodItem.id);
+
+  // Create a default preservation guideline if none exists
+  const preservationData: PreservationGuideline = preservation || {
+    refrigerated_duration: "Unknown",
+    room_temp_duration: "Unknown",
+    storage_method: "Store appropriately",
+    tips: "No specific guidelines available"
+  };
 
   return {
     ...foodItem,
     nutrients: nutrients || [],
-    preservation: preservation || {},
+    preservation: preservationData,
     verifications: verifications?.map(v => ({
       source_name: v.certification_sources?.name || 'Unknown Source',
       is_verified: v.is_verified,
@@ -208,6 +224,14 @@ export function setupPreservationRealtime(foodId: string, onUpdate: (guidelines:
           
         if (data) {
           onUpdate(data as PreservationGuideline);
+        } else {
+          // Provide default values if no data is found
+          onUpdate({
+            refrigerated_duration: "Unknown",
+            room_temp_duration: "Unknown",
+            storage_method: "Store appropriately",
+            tips: "No specific guidelines available"
+          });
         }
       }
     )
@@ -235,7 +259,7 @@ export function setupVerificationRealtime(foodId: string, onUpdate: (verificatio
         console.log('Verifications changed:', payload);
         const { data } = await supabase
           .from('organic_verifications')
-          .select('is_verified, certification_id, certification_date, notes, certification_sources(name)')
+          .select('source_id, is_verified, certification_id, certification_date, notes, certification_sources(name)')
           .eq('food_id', foodId);
           
         if (data) {
