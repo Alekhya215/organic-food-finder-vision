@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Image as ImageIcon, Camera, Check, X, Globe, Upload, Timer, Calendar } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -12,7 +12,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getFoodItemByName } from '@/utils/foodDatabase';
+import { 
+  getFoodItemByName, 
+  setupFoodItemRealtime, 
+  setupNutrientsRealtime,
+  setupPreservationRealtime,
+  setupVerificationRealtime,
+  type FoodItemWithDetails,
+  type Nutrient,
+  type PreservationGuideline,
+  type OrganicVerification
+} from '@/utils/foodDatabase';
 
 const organicFoodDatabase = {
   'Apple': {
@@ -199,11 +209,13 @@ const mockOrganicVerificationData = {
 const ImageScanner = () => {
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState<string | null>(null);
-  const [foodInfo, setFoodInfo] = useState<any>(null);
+  const [foodInfo, setFoodInfo] = useState<FoodItemWithDetails | null>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const [verificationData, setVerificationData] = useState<any[] | null>(null);
+  const [verificationData, setVerificationData] = useState<OrganicVerification[] | null>(null);
+  const [nutrients, setNutrients] = useState<Nutrient[]>([]);
+  const [preservation, setPreservation] = useState<PreservationGuideline | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -218,6 +230,52 @@ const ImageScanner = () => {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (!foodInfo) return;
+
+    const foodItemUnsub = setupFoodItemRealtime(foodInfo.id, (updatedItem) => {
+      setFoodInfo(prev => prev ? { ...prev, ...updatedItem } : null);
+      toast({
+        title: "Food Item Updated",
+        description: "Food information has been updated in real-time"
+      });
+    });
+
+    const nutrientsUnsub = setupNutrientsRealtime(foodInfo.id, (updatedNutrients) => {
+      setNutrients(updatedNutrients);
+      setFoodInfo(prev => prev ? { ...prev, nutrients: updatedNutrients } : null);
+      toast({
+        title: "Nutrients Updated",
+        description: "Nutritional information has been updated in real-time"
+      });
+    });
+
+    const preservationUnsub = setupPreservationRealtime(foodInfo.id, (updatedPreservation) => {
+      setPreservation(updatedPreservation);
+      setFoodInfo(prev => prev ? { ...prev, preservation: updatedPreservation } : null);
+      toast({
+        title: "Preservation Guidelines Updated",
+        description: "Storage information has been updated in real-time"
+      });
+    });
+
+    const verificationsUnsub = setupVerificationRealtime(foodInfo.id, (updatedVerifications) => {
+      setVerificationData(updatedVerifications);
+      setFoodInfo(prev => prev ? { ...prev, verifications: updatedVerifications } : null);
+      toast({
+        title: "Organic Verification Updated",
+        description: "Certification information has been updated in real-time"
+      });
+    });
+
+    return () => {
+      foodItemUnsub();
+      nutrientsUnsub();
+      preservationUnsub();
+      verificationsUnsub();
+    };
+  }, [foodInfo?.id]);
 
   const requestCameraPermission = async () => {
     try {
@@ -300,7 +358,7 @@ const ImageScanner = () => {
     setVerificationData(null);
     
     try {
-      const possibleFoods = ['Apple', 'Spinach', 'Tomato', 'Carrot', 'Broccoli', 'Banana'];
+      const possibleFoods = ['Apple', 'Spinach', 'Tomato', 'Carrots', 'Broccoli', 'Banana'];
       const recognizedFood = possibleFoods[Math.floor(Math.random() * possibleFoods.length)];
       
       const foodData = await getFoodItemByName(recognizedFood);
@@ -308,16 +366,28 @@ const ImageScanner = () => {
       if (foodData) {
         setResult(foodData.name);
         setFoodInfo(foodData);
+        setNutrients(foodData.nutrients);
+        setPreservation(foodData.preservation);
         setVerificationData(foodData.verifications);
-        toast.success(`Identified as ${foodData.name}!`);
+        toast({
+          title: "Food Identified",
+          description: `Identified as ${foodData.name}!`
+        });
       } else {
-        toast.error('Food not found in database');
+        toast({
+          title: "Food Not Found",
+          description: "Could not identify this food in our database",
+          variant: "destructive"
+        });
       }
-      
-      setScanning(false);
     } catch (error) {
       console.error('Error analyzing image:', error);
-      toast.error('Unable to analyze image');
+      toast({
+        title: "Error",
+        description: "Unable to analyze image",
+        variant: "destructive"
+      });
+    } finally {
       setScanning(false);
     }
   };
@@ -533,7 +603,9 @@ const ImageScanner = () => {
           {result && foodInfo && (
             <div className="w-full p-4 bg-earthy-light rounded-lg">
               <h4 className="font-medium mb-2">Food Information</h4>
-              <div className="bg-white p-3 rounded border border-gray-200">
+              <div className="bg-white p-3 rounded border border-gray-200 relative">
+                <Badge className="absolute top-2 right-2 bg-blue-500 animate-pulse">Real-time</Badge>
+                
                 <h5 className="font-medium text-earthy">{foodInfo.name}</h5>
                 <div className="text-xs text-gray-700 mt-1 space-y-1">
                   <p><span className="font-medium">Variety:</span> {foodInfo.variety}</p>

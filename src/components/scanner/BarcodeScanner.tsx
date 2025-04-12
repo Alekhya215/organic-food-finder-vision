@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Barcode, Camera, Check, X, AlertCircle, Globe, Calendar, Timer } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { 
@@ -13,7 +13,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getFoodItemByBarcode } from '@/utils/foodDatabase';
+import { 
+  getFoodItemByBarcode, 
+  setupFoodItemRealtime, 
+  setupNutrientsRealtime,
+  setupPreservationRealtime,
+  setupVerificationRealtime,
+  type FoodItemWithDetails,
+  type Nutrient,
+  type PreservationGuideline,
+  type OrganicVerification
+} from '@/utils/foodDatabase';
 
 const organicProductsDatabase = {
   '8901063152227': {
@@ -125,11 +135,13 @@ const BarcodeScanner = () => {
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [manualBarcode, setManualBarcode] = useState<string>('');
-  const [productInfo, setProductInfo] = useState<any>(null);
+  const [productInfo, setProductInfo] = useState<FoodItemWithDetails | null>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
-  const [verificationData, setVerificationData] = useState<any[] | null>(null);
+  const [verificationData, setVerificationData] = useState<OrganicVerification[] | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [nutrients, setNutrients] = useState<Nutrient[]>([]);
+  const [preservation, setPreservation] = useState<PreservationGuideline | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
@@ -140,6 +152,52 @@ const BarcodeScanner = () => {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (!productInfo) return;
+
+    const foodItemUnsub = setupFoodItemRealtime(productInfo.id, (updatedItem) => {
+      setProductInfo(prev => prev ? { ...prev, ...updatedItem } : null);
+      toast({
+        title: "Food Item Updated",
+        description: "Food information has been updated in real-time"
+      });
+    });
+
+    const nutrientsUnsub = setupNutrientsRealtime(productInfo.id, (updatedNutrients) => {
+      setNutrients(updatedNutrients);
+      setProductInfo(prev => prev ? { ...prev, nutrients: updatedNutrients } : null);
+      toast({
+        title: "Nutrients Updated",
+        description: "Nutritional information has been updated in real-time"
+      });
+    });
+
+    const preservationUnsub = setupPreservationRealtime(productInfo.id, (updatedPreservation) => {
+      setPreservation(updatedPreservation);
+      setProductInfo(prev => prev ? { ...prev, preservation: updatedPreservation } : null);
+      toast({
+        title: "Preservation Guidelines Updated",
+        description: "Storage information has been updated in real-time"
+      });
+    });
+
+    const verificationsUnsub = setupVerificationRealtime(productInfo.id, (updatedVerifications) => {
+      setVerificationData(updatedVerifications);
+      setProductInfo(prev => prev ? { ...prev, verifications: updatedVerifications } : null);
+      toast({
+        title: "Organic Verification Updated",
+        description: "Certification information has been updated in real-time"
+      });
+    });
+
+    return () => {
+      foodItemUnsub();
+      nutrientsUnsub();
+      preservationUnsub();
+      verificationsUnsub();
+    };
+  }, [productInfo?.id]);
 
   const requestCameraPermission = async () => {
     try {
@@ -213,16 +271,29 @@ const BarcodeScanner = () => {
       
       if (foodData) {
         setProductInfo(foodData);
+        setNutrients(foodData.nutrients);
+        setPreservation(foodData.preservation);
         setVerificationData(foodData.verifications);
-        toast.success(`Found product: ${foodData.name}`);
+        toast({
+          title: "Product Found",
+          description: `Found product: ${foodData.name}`
+        });
       } else {
-        toast.error('Product not found in database');
+        toast({
+          title: "Product Not Found",
+          description: "This barcode is not in our database",
+          variant: "destructive"
+        });
         setProductInfo(null);
         setVerificationData(null);
       }
     } catch (error) {
       console.error('Error fetching food item:', error);
-      toast.error('Unable to retrieve product information');
+      toast({
+        title: "Error",
+        description: "Unable to retrieve product information",
+        variant: "destructive"
+      });
     }
   };
 
@@ -390,7 +461,9 @@ const BarcodeScanner = () => {
               </p>
               
               {productInfo && (
-                <div className="mt-2 bg-white p-3 rounded border border-gray-200">
+                <div className="mt-2 bg-white p-3 rounded border border-gray-200 relative">
+                  <Badge className="absolute top-2 right-2 bg-blue-500 animate-pulse">Real-time</Badge>
+                  
                   <h5 className="font-medium text-organic">{productInfo.name}</h5>
                   <div className="text-xs text-gray-700 mt-1 space-y-1">
                     <p><span className="font-medium">Brand:</span> {productInfo.brand}</p>
