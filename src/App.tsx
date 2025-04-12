@@ -14,35 +14,38 @@ import ScanPage from './pages/ScanPage';
 import { useEffect } from 'react';
 import { enableRealtimeForFoodTables } from './integrations/supabase/enableRealtime';
 import { Toaster } from './components/ui/toaster';
+import { AuthProvider } from './context/AuthContext';
 
 function App() {
   // Enable real-time functionality when the app starts
   useEffect(() => {
-    const disableRealtime = enableRealtimeForFoodTables();
+    const disableRealtimeFunction = enableRealtimeForFoodTables();
     
     // Cleanup when the app unmounts
     return () => {
-      disableRealtime();
+      disableRealtimeFunction();
     };
   }, []);
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route element={<Layout />}>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/contact" element={<ContactPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/scan" element={<ScanPage />} />
-          <Route path="/feedback" element={<FeedbackPage />} />
-          <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-          <Route path="*" element={<NotFound />} />
-        </Route>
-      </Routes>
-      <Toaster />
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Layout />}>
+            <Route index element={<HomePage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/scan" element={<ScanPage />} />
+            <Route path="/feedback" element={<FeedbackPage />} />
+            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route path="*" element={<NotFound />} />
+          </Route>
+        </Routes>
+        <Toaster />
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 

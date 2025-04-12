@@ -3,7 +3,7 @@ import { supabase } from './client';
 
 // This function can be called once at app startup to enable
 // real-time updates for the required tables
-export async function enableRealtimeForFoodTables() {
+export function enableRealtimeForFoodTables() {
   console.log('Enabling real-time for food database tables...');
   
   try {
