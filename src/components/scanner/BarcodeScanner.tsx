@@ -5,6 +5,39 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Barcode, Camera, Check, X, AlertCircle, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+
+// Real barcodes database (simulated)
+const organicProductsDatabase = {
+  '8901063152227': {
+    name: 'Organic Honey',
+    brand: 'Nature\'s Best',
+    ingredients: 'Pure Organic Honey',
+    nutritionalInfo: 'Energy: 304 kcal, Carbohydrates: 82g, Sugars: 82g',
+    origin: 'Himalayan Valleys, India',
+  },
+  '5000112637922': {
+    name: 'Organic Quinoa',
+    brand: 'Earth Harvest',
+    ingredients: '100% Organic White Quinoa',
+    nutritionalInfo: 'Energy: 368 kcal, Protein: 14g, Carbohydrates: 64g, Fat: 6g',
+    origin: 'Andean Mountains, Peru',
+  },
+  '8901719110018': {
+    name: 'Green Tea',
+    brand: 'Mountain Tea Co.',
+    ingredients: 'Green Tea Leaves, Natural Flavors',
+    nutritionalInfo: 'Energy: 0 kcal, Antioxidants: High',
+    origin: 'Darjeeling, India',
+  },
+  '8902080527022': {
+    name: 'Organic Coconut Oil',
+    brand: 'Tropicana Organic',
+    ingredients: '100% Cold-Pressed Organic Coconut Oil',
+    nutritionalInfo: 'Energy: 862 kcal, Fat: 100g, Saturated Fat: 86.5g',
+    origin: 'Kerala, India',
+  }
+};
 
 // Mock data for organic verification from different websites
 const mockOrganicVerificationData = {
@@ -33,6 +66,8 @@ const mockOrganicVerificationData = {
 const BarcodeScanner = () => {
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  const [manualBarcode, setManualBarcode] = useState<string>('');
+  const [productInfo, setProductInfo] = useState<any>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
   const [verificationData, setVerificationData] = useState<any[] | null>(null);
@@ -86,18 +121,47 @@ const BarcodeScanner = () => {
 
   const handleScan = () => {
     setScanning(true);
-    // In a real app, we would analyze video frames for barcodes
-    // For simulation purposes, we'll just use a timeout
+    
+    // For a real scanner, we would analyze video frames
+    // For simulation, we'll provide a realistic experience
     setTimeout(() => {
-      const mockBarcodes = ['8901063152227', '5000112637922', '8901719110018', '8902080527022'];
-      const randomBarcode = mockBarcodes[Math.floor(Math.random() * mockBarcodes.length)];
-      setResult(randomBarcode);
+      let barcodeToUse;
+      
+      if (Math.random() > 0.5) {
+        // Simulate actual scan of one of our known barcodes
+        const mockBarcodes = Object.keys(organicProductsDatabase);
+        barcodeToUse = mockBarcodes[Math.floor(Math.random() * mockBarcodes.length)];
+      } else {
+        // Simulate scanning a random barcode
+        barcodeToUse = Math.floor(Math.random() * 9000000000000) + 1000000000000;
+      }
+      
+      setResult(barcodeToUse.toString());
       setScanning(false);
       toast.success('Barcode scanned successfully!');
       
-      // Trigger verification after scan
-      verifyOrganicStatus(randomBarcode);
+      // Look up product and trigger verification
+      processBarcode(barcodeToUse.toString());
     }, 2000);
+  };
+
+  const handleManualSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (manualBarcode && manualBarcode.length > 8) {
+      setResult(manualBarcode);
+      processBarcode(manualBarcode);
+    } else {
+      toast.error('Please enter a valid barcode (at least 8 digits)');
+    }
+  };
+
+  const processBarcode = (barcode: string) => {
+    // Look up product info
+    const product = organicProductsDatabase[barcode as keyof typeof organicProductsDatabase];
+    setProductInfo(product || null);
+    
+    // Verify organic status
+    verifyOrganicStatus(barcode);
   };
 
   const verifyOrganicStatus = (barcode: string) => {
@@ -106,7 +170,40 @@ const BarcodeScanner = () => {
     
     // Simulate API calls to different websites
     setTimeout(() => {
-      const data = mockOrganicVerificationData[barcode as keyof typeof mockOrganicVerificationData] || [];
+      // For known barcodes, use our predefined results
+      // For unknown barcodes, generate random verification results
+      let data;
+      
+      if (mockOrganicVerificationData[barcode as keyof typeof mockOrganicVerificationData]) {
+        data = mockOrganicVerificationData[barcode as keyof typeof mockOrganicVerificationData];
+      } else {
+        // Generate random verification for unknown barcode
+        const randomOrganic = Math.random() > 0.5;
+        const randomDate = new Date();
+        randomDate.setDate(randomDate.getDate() - Math.floor(Math.random() * 365));
+        const dateStr = randomDate.toISOString().split('T')[0];
+        
+        data = [
+          { 
+            source: 'OrganicCertifier.org', 
+            isOrganic: randomOrganic, 
+            certificationId: randomOrganic ? `ORG-${Math.floor(Math.random() * 10000)}-ID` : null,
+            notes: randomOrganic ? 'Verified organic' : 'Not found in database'
+          },
+          { 
+            source: 'GlobalOrganicDatabase.com', 
+            isOrganic: randomOrganic, 
+            certificationDate: randomOrganic ? dateStr : null,
+            notes: randomOrganic ? 'Certification valid' : 'No certification record'
+          },
+          { 
+            source: Math.random() > 0.5 ? 'USDAOrganicList.gov' : 'EUOrganicRegistry.eu', 
+            isOrganic: Math.random() > 0.7, // Sometimes disagrees with others
+            notes: 'Status may vary by region'
+          }
+        ];
+      }
+      
       setVerificationData(data);
       setIsVerifying(false);
       
@@ -143,6 +240,22 @@ const BarcodeScanner = () => {
             Point your camera at a barcode on a packaged organic food product
           </p>
           
+          {/* Manual barcode entry */}
+          <form onSubmit={handleManualSubmit} className="w-full">
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                placeholder="Enter barcode number"
+                value={manualBarcode}
+                onChange={(e) => setManualBarcode(e.target.value)}
+                className="flex-grow"
+              />
+              <Button type="submit" variant="outline" className="border-organic text-organic">
+                Check
+              </Button>
+            </div>
+          </form>
+          
           <div className="w-full aspect-video bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden relative">
             {cameraActive ? (
               <video 
@@ -167,7 +280,8 @@ const BarcodeScanner = () => {
             ) : (
               <div className="text-center text-gray-400">
                 <Camera className="w-12 h-12 mx-auto opacity-50" />
-                <p className="mt-2 text-sm">Camera access required</p>
+                <p className="mt-2 text-sm">Camera access required for scanning</p>
+                <p className="text-xs mt-1">Or enter a barcode manually above</p>
               </div>
             )}
             
@@ -219,6 +333,18 @@ const BarcodeScanner = () => {
               <p className="text-sm text-gray-700">
                 Barcode: {result}
               </p>
+              
+              {productInfo && (
+                <div className="mt-2 bg-white p-3 rounded border border-gray-200">
+                  <h5 className="font-medium text-organic">{productInfo.name}</h5>
+                  <div className="text-xs text-gray-700 mt-1 space-y-1">
+                    <p><span className="font-medium">Brand:</span> {productInfo.brand}</p>
+                    <p><span className="font-medium">Ingredients:</span> {productInfo.ingredients}</p>
+                    <p><span className="font-medium">Nutrition:</span> {productInfo.nutritionalInfo}</p>
+                    <p><span className="font-medium">Origin:</span> {productInfo.origin}</p>
+                  </div>
+                </div>
+              )}
               
               {isVerifying ? (
                 <div className="mt-3 flex items-center space-x-2">

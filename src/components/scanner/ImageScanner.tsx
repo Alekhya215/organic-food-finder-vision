@@ -2,44 +2,115 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Image, Camera, Check, X, Globe } from 'lucide-react';
+import { Image as ImageIcon, Camera, Check, X, Globe, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 
+// Real food database (simulated)
+const organicFoodDatabase = {
+  'Apple': {
+    name: 'Organic Apple',
+    variety: 'Honeycrisp',
+    nutrients: 'Vitamin C, Fiber, Antioxidants',
+    benefits: 'Supports heart health, aids digestion',
+    season: 'Late Summer to Fall',
+    growthConditions: 'Temperate climate, well-drained soil',
+    organicCultivation: 'No synthetic pesticides, natural fertilizers only',
+  },
+  'Spinach': {
+    name: 'Organic Spinach',
+    variety: 'Baby Spinach',
+    nutrients: 'Iron, Vitamin K, Folate, Magnesium',
+    benefits: 'Supports bone health, helps prevent anemia',
+    season: 'Spring and Fall',
+    growthConditions: 'Cool weather, moist soil',
+    organicCultivation: 'Crop rotation, natural pest management',
+  },
+  'Tomato': {
+    name: 'Tomato',
+    variety: 'Roma',
+    nutrients: 'Vitamin C, Potassium, Lycopene',
+    benefits: 'Supports heart health, antioxidant properties',
+    season: 'Summer',
+    growthConditions: 'Warm weather, even watering',
+    organicCultivation: 'Often grown with conventional methods',
+  },
+  'Carrots': {
+    name: 'Organic Carrots',
+    variety: 'Nantes',
+    nutrients: 'Vitamin A, Beta-carotene, Fiber',
+    benefits: 'Supports eye health, immune function',
+    season: 'Year-round (peak in fall)',
+    growthConditions: 'Loose, sandy soil, moderate water',
+    organicCultivation: 'Cover crops, natural compost fertilizers',
+  },
+  'Broccoli': {
+    name: 'Organic Broccoli',
+    variety: 'Calabrese',
+    nutrients: 'Vitamin C, Vitamin K, Folate, Fiber',
+    benefits: 'Anti-inflammatory, supports detoxification',
+    season: 'Fall and Spring',
+    growthConditions: 'Cool weather, consistent moisture',
+    organicCultivation: 'Companion planting, natural pest deterrents',
+  },
+  'Banana': {
+    name: 'Organic Banana',
+    variety: 'Cavendish',
+    nutrients: 'Potassium, Vitamin B6, Vitamin C',
+    benefits: 'Supports heart health, aids digestion',
+    season: 'Year-round',
+    growthConditions: 'Tropical climate, high humidity',
+    organicCultivation: 'Natural composts, no synthetic chemicals',
+  }
+};
+
 // Mock data for organic verification from different websites by food type
 const mockOrganicVerificationData = {
-  'Apple (Organic)': [
+  'Apple': [
     { source: 'OrganicProduce.org', isOrganic: true, certificationId: 'USDA-NOP-85241' },
     { source: 'FarmTracker.com', isOrganic: true, farmName: 'Honeycrisp Organic Farms' },
     { source: 'FruitDatabase.org', isOrganic: true, notes: 'Certified organic, no pesticides' }
   ],
-  'Spinach (Organic)': [
+  'Spinach': [
     { source: 'OrganicVegetables.org', isOrganic: true, certificationId: 'EU-BIO-76123' },
     { source: 'FarmTracker.com', isOrganic: true, farmName: 'Green Valley Organics' },
     { source: 'ProduceCheck.com', isOrganic: true, notes: 'Certified organic cultivation' }
   ],
-  'Tomato (Organic)': [
+  'Tomato': [
     { source: 'ProduceDatabase.org', isOrganic: false, notes: 'Detected conventional growing methods' },
     { source: 'OrganicVerify.com', isOrganic: false, notes: 'No organic certification found' },
     { source: 'FarmInspect.org', isOrganic: false, notes: 'May contain traces of non-organic fertilizers' }
   ],
-  'Carrots (Organic)': [
+  'Carrots': [
     { source: 'OrganicRootVegetables.org', isOrganic: true, certificationId: 'CAN-ORG-32145' },
     { source: 'RootVegCheck.com', isOrganic: true, notes: 'Fully organic farm verified' },
     { source: 'OrganicTracker.net', isOrganic: true, farmName: 'Sunrise Organic Farms' }
+  ],
+  'Broccoli': [
+    { source: 'OrganicVegetables.org', isOrganic: true, certificationId: 'USDA-NOP-73421' },
+    { source: 'ProduceVerifier.com', isOrganic: true, notes: 'Certified organic growing methods' },
+    { source: 'VeggieTracker.org', isOrganic: false, notes: 'Pending verification' }
+  ],
+  'Banana': [
+    { source: 'TropicalFruitCert.org', isOrganic: true, certificationId: 'GLOBAL-ORG-99542' },
+    { source: 'FruitDatabase.org', isOrganic: true, farmName: 'Tropical Organic Farms' },
+    { source: 'ImportVerifier.com', isOrganic: true, notes: 'Fair trade & organic certified' }
   ]
 };
 
 const ImageScanner = () => {
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  const [foodInfo, setFoodInfo] = useState<any>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [verificationData, setVerificationData] = useState<any[] | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
   // Clean up video stream when component unmounts
@@ -105,31 +176,97 @@ const ImageScanner = () => {
         setCapturedImage(imageDataUrl);
         
         // Begin analysis
-        setScanning(true);
-        
-        // In a real app, we would send this image to an AI service for recognition
-        // For simulation purposes, we'll just use a timeout
-        setTimeout(() => {
-          const possibleResults = ['Apple (Organic)', 'Spinach (Organic)', 'Tomato (Organic)', 'Carrots (Organic)'];
-          const randomResult = possibleResults[Math.floor(Math.random() * possibleResults.length)];
-          setResult(randomResult);
-          setScanning(false);
-          toast.success('Food item recognized successfully!');
-          
-          // Trigger verification after analysis
-          verifyOrganicStatus(randomResult);
-        }, 2000);
+        analyzeCapturedImage();
       }
     }
   };
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files[0]) {
+      const file = files[0];
+      setUploadedImage(file);
+      
+      // Create URL for preview
+      const imageUrl = URL.createObjectURL(file);
+      setCapturedImage(imageUrl);
+      
+      // Begin analysis
+      analyzeCapturedImage();
+    }
+  };
+
+  const triggerFileInput = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const analyzeCapturedImage = () => {
+    setScanning(true);
+    setResult(null);
+    setFoodInfo(null);
+    setVerificationData(null);
+    
+    // In a real app, we would send this image to an AI service for recognition
+    // For simulation purposes, we'll just use a timeout and random selection
+    setTimeout(() => {
+      const possibleFoods = Object.keys(organicFoodDatabase);
+      const recognizedFood = possibleFoods[Math.floor(Math.random() * possibleFoods.length)];
+      
+      setResult(recognizedFood);
+      setScanning(false);
+      
+      // Set food info
+      const info = organicFoodDatabase[recognizedFood as keyof typeof organicFoodDatabase];
+      setFoodInfo(info);
+      
+      toast.success(`Identified as ${recognizedFood}!`);
+      
+      // Trigger verification after analysis
+      verifyOrganicStatus(recognizedFood);
+    }, 2000);
+  };
+
   const verifyOrganicStatus = (foodItem: string) => {
     setIsVerifying(true);
-    setVerificationData(null);
     
     // Simulate API calls to different websites
     setTimeout(() => {
-      const data = mockOrganicVerificationData[foodItem as keyof typeof mockOrganicVerificationData] || [];
+      // Use our predefined verification data for known foods
+      // For unknown foods, generate random verification results
+      let data;
+      
+      if (mockOrganicVerificationData[foodItem as keyof typeof mockOrganicVerificationData]) {
+        data = mockOrganicVerificationData[foodItem as keyof typeof mockOrganicVerificationData];
+      } else {
+        // Generate random verification for unknown food
+        const randomOrganic = Math.random() > 0.3; // Most foods are likely organic in this context
+        const randomDate = new Date();
+        randomDate.setDate(randomDate.getDate() - Math.floor(Math.random() * 365));
+        const dateStr = randomDate.toISOString().split('T')[0];
+        
+        data = [
+          { 
+            source: 'OrganicProduce.org', 
+            isOrganic: randomOrganic, 
+            certificationId: randomOrganic ? `ORG-${Math.floor(Math.random() * 10000)}-ID` : null,
+            notes: randomOrganic ? 'Common organic variety' : 'May be conventionally grown'
+          },
+          { 
+            source: 'FarmTracker.com', 
+            isOrganic: randomOrganic, 
+            farmName: randomOrganic ? 'Nature\'s Best Farms' : null,
+            notes: randomOrganic ? 'Sustainable farming practices' : 'Unknown farm source'
+          },
+          { 
+            source: Math.random() > 0.5 ? 'ProduceDatabase.org' : 'OrganicVerify.com', 
+            isOrganic: Math.random() > 0.2, // High chance of being organic
+            notes: 'Visual characteristics consistent with organic farming'
+          }
+        ];
+      }
+      
       setVerificationData(data);
       setIsVerifying(false);
       
@@ -146,7 +283,13 @@ const ImageScanner = () => {
   const resetCapture = () => {
     setCapturedImage(null);
     setResult(null);
+    setFoodInfo(null);
     setVerificationData(null);
+    setUploadedImage(null);
+    
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   // Calculate overall organic status
@@ -164,13 +307,22 @@ const ImageScanner = () => {
       <CardContent className="p-6">
         <div className="flex flex-col items-center space-y-4">
           <div className="w-16 h-16 rounded-full bg-earthy-light flex items-center justify-center">
-            <Image className="w-8 h-8 text-earthy" />
+            <ImageIcon className="w-8 h-8 text-earthy" />
           </div>
           
           <h3 className="text-xl font-semibold text-center">Image Recognition</h3>
           <p className="text-sm text-gray-500 text-center">
             Take a picture of unpacked organic food items to identify them
           </p>
+          
+          {/* Hidden file input */}
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            accept="image/*" 
+            className="hidden" 
+            onChange={handleFileUpload}
+          />
           
           <div className="w-full aspect-video bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden relative">
             {capturedImage ? (
@@ -196,20 +348,31 @@ const ImageScanner = () => {
               </div>
             ) : result ? (
               <div className="text-center">
-                <Image className="w-12 h-12 text-earthy mx-auto" />
+                <ImageIcon className="w-12 h-12 text-earthy mx-auto" />
                 <p className="mt-2 text-sm font-medium">Detected: {result}</p>
               </div>
             ) : (
               <div className="text-center text-gray-400">
-                <Camera className="w-12 h-12 mx-auto opacity-50" />
-                <p className="mt-2 text-sm">Camera access required</p>
+                <div className="flex flex-col items-center">
+                  <Camera className="w-12 h-12 mx-auto opacity-50 mb-2" />
+                  <p className="text-sm">Camera or upload required</p>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    className="mt-2 text-earthy"
+                    onClick={triggerFileInput}
+                  >
+                    <Upload className="w-4 h-4 mr-1" />
+                    Upload image
+                  </Button>
+                </div>
               </div>
             )}
             
             {scanning && (
               <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
                 <div className="animate-pulse">
-                  <Image className="w-16 h-16 text-white" />
+                  <ImageIcon className="w-16 h-16 text-white" />
                 </div>
               </div>
             )}
@@ -219,18 +382,30 @@ const ImageScanner = () => {
           </div>
           
           {!cameraActive && !capturedImage ? (
-            <Button 
-              onClick={requestCameraPermission} 
-              className="w-full bg-earthy hover:bg-earthy-dark"
-              disabled={scanning}
-            >
-              Enable Camera
-            </Button>
+            <div className="w-full grid grid-cols-2 gap-2">
+              <Button 
+                onClick={requestCameraPermission} 
+                className="bg-earthy hover:bg-earthy-dark"
+                disabled={scanning}
+              >
+                <Camera className="w-4 h-4 mr-2" />
+                Camera
+              </Button>
+              <Button 
+                onClick={triggerFileInput}
+                variant="outline"
+                className="border-earthy text-earthy"
+                disabled={scanning}
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Upload
+              </Button>
+            </div>
           ) : capturedImage ? (
             <div className="w-full flex space-x-2">
               {!result && (
                 <Button 
-                  onClick={() => setScanning(true)}
+                  onClick={analyzeCapturedImage}
                   className="flex-1 bg-earthy hover:bg-earthy-dark"
                   disabled={scanning}
                 >
@@ -242,7 +417,7 @@ const ImageScanner = () => {
                 variant="outline"
                 className="flex-1 border-earthy text-earthy"
               >
-                Take New Photo
+                New Image
               </Button>
             </div>
           ) : (
@@ -269,12 +444,19 @@ const ImageScanner = () => {
             </div>
           )}
           
-          {result && (
+          {result && foodInfo && (
             <div className="w-full p-4 bg-earthy-light rounded-lg">
               <h4 className="font-medium mb-2">Food Information</h4>
-              <p className="text-sm text-gray-700">
-                Identified Item: {result}
-              </p>
+              <div className="bg-white p-3 rounded border border-gray-200">
+                <h5 className="font-medium text-earthy">{foodInfo.name}</h5>
+                <div className="text-xs text-gray-700 mt-1 space-y-1">
+                  <p><span className="font-medium">Variety:</span> {foodInfo.variety}</p>
+                  <p><span className="font-medium">Nutrients:</span> {foodInfo.nutrients}</p>
+                  <p><span className="font-medium">Benefits:</span> {foodInfo.benefits}</p>
+                  <p><span className="font-medium">Season:</span> {foodInfo.season}</p>
+                  <p><span className="font-medium">Growing:</span> {foodInfo.organicCultivation}</p>
+                </div>
+              </div>
               
               {isVerifying ? (
                 <div className="mt-3 flex items-center space-x-2">

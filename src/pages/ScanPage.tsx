@@ -61,8 +61,8 @@ const ScanPage = () => {
                   4. We'll verify the organic status by checking multiple trusted sources and databases.
                 </p>
                 <div className="text-xs text-gray-500 p-3 bg-gray-100 rounded-md mt-4">
-                  <p>Note: In this demonstration, we simulate barcode scanning with random values. 
-                  A production version would connect to real food databases and use your device's camera.</p>
+                  <p>Note: For demonstration purposes, you can enter your own barcode number or use the camera to scan a real barcode. 
+                  We'll simulate verification across organic food databases.</p>
                 </div>
               </div>
             ) : (
@@ -80,8 +80,8 @@ const ScanPage = () => {
                   4. We cross-reference multiple organic certification databases to verify authenticity.
                 </p>
                 <div className="text-xs text-gray-500 p-3 bg-gray-100 rounded-md mt-4">
-                  <p>Note: This demonstration simulates image recognition with predetermined responses. 
-                  A production version would use AI image recognition and connect to real organic food databases.</p>
+                  <p>Note: For demonstration purposes, you can upload your own image or use the camera to take a real photo. 
+                  We'll simulate AI recognition and verification across organic food databases.</p>
                 </div>
               </div>
             )}
